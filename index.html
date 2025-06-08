@@ -5,6 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IoT Lab Project - Temperature Monitoring</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    nav a {
+      background-color: #ac9e03;
+      padding: 10px 15px;
+      border-radius: 8px;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    nav a:hover {
+      background-color: #003366;
+    }
+
+    section {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid #080505;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -40,7 +72,7 @@ float temperatureC = (voltage - 0.5) * 100;</code></pre>
     <section id="results">
       <h2>Results</h2>
       <figure>
-        <img src="images/temperature-graph.png" alt="Temperature Data Graph">
+        <img src="TMP36.png" alt="Temperature Data Graph">
         <figcaption>Temperature readings over time from ThingSpeak.</figcaption>
       </figure>
       <p>Data was logged every 30 seconds and visualized through ThingSpeak's built-in charting tools.</p>
