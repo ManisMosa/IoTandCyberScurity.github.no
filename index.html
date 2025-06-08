@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Lab Project - Temperature Monitoring</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>IoT Temperature Monitoring System</h1>
+    <nav>
+      <a href="#intro">Introduction</a>
+      <a href="#methods">Methods</a>
+      <a href="#results">Results</a>
+      <a href="#discussion">Discussion</a>
+      <a href="#references">References</a>
+    </nav>
+  </header>
+  <main>
+    <section id="intro">
+      <h2>Introduction</h2>
+      <p>This project aims to monitor ambient temperature using an Arduino and a TMP36 sensor, and stream the data to ThingSpeak for remote monitoring.</p>
+    </section>
+
+    <section id="methods">
+      <h2>Materials and Methods</h2>
+      <ul>
+        <li>Arduino Uno</li>
+        <li>TMP36 temperature sensor</li>
+        <li>Breadboard and jumper wires</li>
+        <li>WiFi module (if not using Uno WiFi)</li>
+        <li>ThingSpeak account</li>
+      </ul>
+      <p>We connect the TMP36 to an analog pin and use the <code>analogRead()</code> function to capture voltage data, converting it into temperature in Celsius.</p>
+      <pre><code>float voltage = analogRead(A0) * (5.0 / 1023.0);
+float temperatureC = (voltage - 0.5) * 100;</code></pre>
+    </section>
+
+    <section id="results">
+      <h2>Results</h2>
+      <figure>
+        <img src="images/temperature-graph.png" alt="Temperature Data Graph">
+        <figcaption>Temperature readings over time from ThingSpeak.</figcaption>
+      </figure>
+      <p>Data was logged every 30 seconds and visualized through ThingSpeak's built-in charting tools.</p>
+    </section>
+
+    <section id="discussion">
+      <h2>Discussion and Conclusions</h2>
+      <p>The system successfully monitored temperature in real-time. It demonstrates the power of simple IoT setups for environmental monitoring. Future improvements may include battery power, mobile app alerts, or integration with other sensors.</p>
+    </section>
+
+    <section id="references">
+      <h2>References</h2>
+      <ul>
+        <li><a href="https://www.arduino.cc/">Arduino Official Website</a></li>
+        <li><a href="https://thingspeak.com/">ThingSpeak Platform</a></li>
+        <li><a href="https://www.halvorsen.blog">Hans-Petter Halvorsen's Blog</a></li>
+      </ul>
+    </section>
+  </main>
+  <footer>
+    <p>&copy; 2025 IoT Lab Project by [Your Name]</p>
+  </footer>
+</body>
+</html>
