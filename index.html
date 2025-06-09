@@ -52,7 +52,23 @@
   <main>
     <section id="intro">
       <h2>Introduction</h2>
-      <p>This project aims to monitor ambient temperature using an Arduino and a TMP36 sensor, and stream the data to ThingSpeak for remote monitoring.</p>
+      <p>Present the challenge: controlling an Air Heater using a custom-built PI controller on Arduino.
+
+        Mention that Arduino Uno lacks analog out, and you solved it using RC filtering or DAC.
+        
+        Explain the importance of cloud logging and remote HMI for modern IoT systems.
+        
+        Briefly introduce your goals:
+        
+        Build and test a PI controller.
+        
+        Filter noisy sensor data.
+        
+        Send data to ThingSpeak.
+        
+        Enable setpoint and parameter adjustment.
+        
+        Build a GUI for user interaction.</p>
     </section>
 
     <section id="methods">
@@ -93,7 +109,7 @@ float temperatureC = (voltage - 0.5) * 100;</code></pre>
     </section>
   </main>
   <footer>
-    <p>&copy; 2025 IoT Lab Project by Manis Mosa</p>
+    <p>&copy; 2025 IoT Lab Project by Manis Mosa </p>
   </footer>
 </body>
 </html>
