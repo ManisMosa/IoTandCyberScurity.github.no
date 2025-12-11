@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arduino Code – IoT Temperature Monitoring</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      padding: 16px 20px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 1.8rem;
+    }
+
+    header p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .back-link {
+      margin-bottom: 16px;
+    }
+
+    .back-link a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #0c59cc;
+      font-weight: 600;
+    }
+
+    .back-link a:hover {
+      text-decoration: underline;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    /* same code style as your main page */
+    pre {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 16px;
+      overflow: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+      font-size: 0.9rem;
+    }
+
+    pre code {
+      color: inherit !important;
+      background: transparent !important;
+      opacity: 1 !important;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      display: block;
+      white-space: pre;
+    }
+
+    .info-box {
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Arduino Code – IoT Temperature Monitoring System</h1>
+    <p>Appendix A – Full firmware listing used in the IoT lab project.</p>
+  </header>
+
+  <main>
+    <div class="back-link">
+      <a href="index.html">
+        &#8592; Back to report
+      </a>
+    </div>
+
+    <div class="info-box">
+      <strong>Note:</strong>
+      Wi-Fi and ThingSpeak credentials are replaced with placeholders like
+      <code>YOUR_WIFI_SSID</code> and <code>YOUR_API_KEY</code>.
+      
+    </div>
+
+    <h2>Arduino Sketch</h2>
+
+    <pre><code class="language-cpp">
+// === Arduino IoT Temperature Monitoring Sketch (sanitized) ===
+
+#include &lt;WiFiS3.h&gt;
+#include "ThingSpeak.h"
+#include &lt;MyPID.h&gt;
+#include &lt;MyLowPassFilter.h&gt;
+
+// === WiFi Credentials (REDACTED) ===
+const char* ssid     = "YOUR_WIFI_SSID";        
+const char* password = "YOUR_WIFI_PASSWORD";    
+
+// Optional HTTP/demo credentials
+const char* HTTP_USER = "YOUR_HTTP_USERNAME";
+const char* HTTP_PASS = "YOUR_HTTP_PASSWORD";
+
+// === ThingSpeak Configuration (REDACTED) ===
+WiFiClient client;
+unsigned long myChannelNumber = 0;             
+const char* myWriteAPIKey     = "YOUR_API_KEY"; 
+
+// === Web Server ===
+WiFiServer server(80);
+
+// === Pins ===
+const int btnIncrease = 2;
+const int btnDecrease = 3;
+const int pwmPin      = 5;
+const int ledOutput   = 6;
+const int ledStatus   = 7;
+
+// === Process Variables ===
+int setpoint = 25;
+float kp = 5.0, ki = 0.1, kd = 0.0;
+MyPID myController(kp, ki, kd);
+MyLowPassFilter myFilter(0.05, 20.0);     // Filter for simulated temperature
+MyLowPassFilter tmp36Filter(0.05, 20.0);  // Filter for TMP36 sensor
+
+float T_ambient      = 21.0;
+float tau            = 22.0;
+float K              = 3.5;
+float simulatedTemp  = 20.0;
+float rawTemp        = 20.0;
+float tmp36Raw       = 20.0;
+float tmp36Filtered  = 20.0;
+
+int lastOutput = 0;
+unsigned long lastTime             = 0;
+unsigned long lastThingSpeakUpdate = 0;
+
+// === Helper Function to Extract Parameters from URL ===
+String getParam(String req, String key) {
+  int idx = req.indexOf(key + "=");
+  if (idx == -1) return "";
+  int start = idx + key.length() + 1;
+  int end   = req.indexOf("&", start);
+  if (end == -1) end = req.indexOf(" ", start);
+  return req.substring(start, end);
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(btnIncrease, INPUT_PULLUP);
+  pinMode(btnDecrease, INPUT_PULLUP);
+  pinMode(pwmPin, OUTPUT);
+  pinMode(ledOutput, OUTPUT);
+  pinMode(ledStatus, OUTPUT);
+
+  // Connect to WiFi
+  Serial.print("Connecting to WiFi");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(" Connected!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // Start web server and ThingSpeak
+  server.begin();
+  ThingSpeak.begin(client);
+
+  lastTime = millis();
+}
+
+void loop() {
+  // Reconnect WiFi if disconnected
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected, reconnecting...");
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println(" Reconnected!");
+  }
+
+  // Calculate delta time
+  unsigned long now = millis();
+  float dt = (now - lastTime) / 1000.0;
+  lastTime = now;
+
+  // Button edge detection
+  static bool prevIncState = HIGH;
+  static bool prevDecState = HIGH;
+  bool currIncState = digitalRead(btnIncrease);
+  bool currDecState = digitalRead(btnDecrease);
+  if (currIncState == LOW && prevIncState == HIGH) setpoint++;
+  if (currDecState == LOW && prevDecState == HIGH) setpoint--;
+  prevIncState = currIncState;
+  prevDecState = currDecState;
+
+  // Simulated temperature calculation
+  rawTemp = simulatedTemp + random(-10, 10) * 0.05;
+  float filteredTemp = myFilter.update(rawTemp);
+  float u = lastOutput / 255.0;
+  float dTdt = (-1.0 / tau) * (simulatedTemp - T_ambient) + K * u;
+  simulatedTemp += dTdt * dt;
+
+  // TMP36 real sensor
+  int analogReading = analogRead(A0);
+  float voltage = analogReading * (5.0 / 1023.0);
+  tmp36Raw = (voltage - 0.5) * 100.0 - 9.7;  // TMP36 °C
+  tmp36Filtered = tmp36Filter.update(tmp36Raw);
+
+  // PID control
+  float outputFloat = myController.compute(setpoint, filteredTemp);
+  int output = constrain(outputFloat, 0, 255);
+  lastOutput = output;
+
+  // PWM outputs
+  analogWrite(pwmPin, output);
+  analogWrite(ledOutput, output);
+  digitalWrite(ledStatus, abs(setpoint - filteredTemp) &lt; 1.0);
+
+  // Serial Monitor Output
+  Serial.println("======== PID Dashboard Data ========");
+  Serial.print("Setpoint       : "); Serial.print(setpoint); Serial.println(" °C");
+  Serial.print("Simulated Temp : "); Serial.print(simulatedTemp, 2); Serial.println(" °C");
+  Serial.print("Filtered Temp  : "); Serial.print(filteredTemp, 2); Serial.println(" °C");
+  Serial.print("TMP36 Raw      : "); Serial.print(tmp36Raw, 2); Serial.println(" °C");
+  Serial.print("TMP36 Filtered : "); Serial.print(tmp36Filtered, 2); Serial.println(" °C");
+  Serial.print("PWM Output     : "); Serial.println(output);
+  Serial.print("PID (Kp,Ki,Kd) : ");
+  Serial.print(kp); Serial.print(", ");
+  Serial.print(ki); Serial.print(", ");
+  Serial.println(kd);
+  Serial.println("====================================");
+
+  // ThingSpeak update every 15 seconds
+  if (millis() - lastThingSpeakUpdate > 15000) {
+    ThingSpeak.setField(1, simulatedTemp);
+    ThingSpeak.setField(2, filteredTemp);
+    ThingSpeak.setField(3, setpoint);
+    ThingSpeak.setField(4, output);
+    ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+    lastThingSpeakUpdate = millis();
+  }
+
+  // Handle Web Server
+  WiFiClient webClient = server.available();
+  if (webClient) {
+    String req = webClient.readStringUntil('\r');
+    req.trim();
+
+    // Parameter changes
+    if (req.indexOf("/inc") > 0) setpoint++;
+    if (req.indexOf("/dec") > 0) setpoint--;
+    if (req.indexOf("kp=") > 0) {
+      kp = getParam(req, "kp").toFloat();
+      ki = getParam(req, "ki").toFloat();
+      kd = getParam(req, "kd").toFloat();
+      myController.setTunings(kp, ki, kd);
+    }
+
+    // JSON Data Endpoint
+    if (req.indexOf("/data") > 0) {
+      webClient.println("HTTP/1.1 200 OK");
+      webClient.println("Content-Type: application/json");
+      webClient.println("Access-Control-Allow-Origin: *");
+      webClient.println("Connection: close");
+      webClient.println();
+      webClient.print("{");
+      webClient.print("\"setpoint\":");        webClient.print(setpoint);          webClient.print(",");
+      webClient.print("\"simulatedTemp\":");   webClient.print(simulatedTemp, 1);  webClient.print(",");
+      webClient.print("\"filteredTemp\":");    webClient.print(filteredTemp, 1);   webClient.print(",");
+      webClient.print("\"tmp36Raw\":");        webClient.print(tmp36Raw, 1);       webClient.print(",");
+      webClient.print("\"tmp36Filtered\":");   webClient.print(tmp36Filtered, 1);  webClient.print(",");
+      webClient.print("\"pwm\":");             webClient.print(output);
+      webClient.print("}");
+      webClient.stop();
+      return;
+    }
+    webClient.stop();
+  }
+}
+    </code></pre>
+    <h2>Custom Libraries</h2>
+<p>
+  The project uses two small custom libraries: <code>MyPID</code> for the PI controller
+  and <code>MyLowPassFilter</code> for exponential smoothing of temperature signals.
+</p>
+
+<h3>MyPID.h</h3>
+<pre><code class="language-cpp">
+#ifndef MyPID_h
+#define MyPID_h
+
+#include "Arduino.h"
+
+class MyPID {
+  public:
+    MyPID(float Kp, float Ki, float Kd);
+    void setTunings(float Kp, float Ki, float Kd);
+    float compute(float setpoint, float input);
+    void reset();
+
+  private:
+    float _Kp;
+    float _Ki;
+    float _Kd;
+    float _integral;
+    float _previousError;
+    unsigned long _lastTime;
+};
+
+#endif
+</code></pre>
+
+<h3>MyPID.cpp</h3>
+<pre><code class="language-cpp">
+#include "Arduino.h"
+#include "MyPID.h"
+
+MyPID::MyPID(float Kp, float Ki, float Kd) {
+  _Kp = Kp;
+  _Ki = Ki;
+  _Kd = Kd;
+  _integral = 0.0;
+  _previousError = 0.0;
+  _lastTime = millis();
+}
+
+void MyPID::setTunings(float Kp, float Ki, float Kd) {
+  _Kp = Kp;
+  _Ki = Ki;
+  _Kd = Kd;
+}
+
+float MyPID::compute(float setpoint, float input) {
+  unsigned long now = millis();
+  float dt = (now - _lastTime) / 1000.0;
+  _lastTime = now;
+
+  float error = setpoint - input;
+
+  _integral += error * dt;
+
+  // Anti-windup clamp
+  if (_integral &gt; 50)  _integral = 50;
+  if (_integral &lt; -50) _integral = -50;
+
+  float derivative = (error - _previousError) / dt;
+  _previousError = error;
+
+  float output = _Kp * error + _Ki * _integral + _Kd * derivative;
+
+  return output;
+}
+
+void MyPID::reset() {
+  _integral = 0.0;
+  _previousError = 0.0;
+  _lastTime = millis();
+}
+</code></pre>
+
+<h3>MyLowPassFilter.h</h3>
+<pre><code class="language-cpp">
+#ifndef MyLowPassFilter_h
+#define MyLowPassFilter_h
+
+#include "Arduino.h"
+
+class MyLowPassFilter {
+  public:
+    MyLowPassFilter(float alpha, float initialValue = 0.0);
+    float update(float newInput);
+    void setAlpha(float alpha);
+    void reset(float value);
+
+  private:
+    float _alpha;
+    float _filteredValue;
+};
+
+#endif
+</code></pre>
+
+<h3>MyLowPassFilter.cpp</h3>
+<pre><code class="language-cpp">
+#include "Arduino.h"
+#include "MyLowPassFilter.h"
+
+MyLowPassFilter::MyLowPassFilter(float alpha, float initialValue) {
+  _alpha = alpha;
+  _filteredValue = initialValue;
+}
+
+float MyLowPassFilter::update(float newInput) {
+  _filteredValue = _alpha * newInput + (1.0f - _alpha) * _filteredValue;
+  return _filteredValue;
+}
+
+void MyLowPassFilter::setAlpha(float alpha) {
+  _alpha = alpha;
+}
+
+void MyLowPassFilter::reset(float value) {
+  _filteredValue = value;
+}
+</code></pre>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Lab Project - Temperature Monitoring</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    header#top h1 {
+      color: #0c59cc !important;      /* dark text */
+      font-size: 2.9rem;
+      font-weight: 1000;
+    }
+    :root{
+      --nav: #ac9e03;
+      --navHover: #003366;
+      --text: #111;
+      --muted: #555;
+      --border: #080505;
+      --card: rgba(255,255,255,.92);
+      --shadow: 0 10px 30px rgba(0,0,0,.12);
+      --radius: 14px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--text); }
+
+    /* ✅ Sticky header so your jump + scroll feels consistent */
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 14px 10px 8px;
+    }
+
+    header h1{
+      margin: 0 0 10px;
+      text-align: center;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      padding-bottom: 8px;
+    }
+
+    nav a, nav button {
+      background-color: var(--nav);
+      padding: 10px 15px;
+      border-radius: 8px;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.06s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    nav a:hover, nav button:hover { background-color: var(--navHover); }
+    nav a:active, nav button:active { transform: translateY(1px); }
+
+    /* ✅ Active section highlight in the top nav */
+    nav a.active{
+      background-color: var(--navHover);
+      outline: 2px solid rgba(0,51,102,.25);
+      outline-offset: 2px;
+    }
+
+    main{
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+
+    section {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ✅ Makes anchor jumps land below sticky header */
+    main > section{
+      scroll-margin-top: 130px; /* adjust if needed */
+    }
+
+    .figure {
+      margin: 1.5rem auto;
+      text-align: center;
+      max-width: 800px;
+    }
+    /* Make Figure 11 and 13 larger than the default 800px */
+    #fig11,
+    #fig13 {
+      max-width: 1050px;     /* or 1050px if you want full main width */
+    }
+    #fig11 img,
+    #fig13 img {
+      width: 100%;           /* fill the wider container */
+      height: auto;
+    }
+    .figure img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #000; /* thin black line */
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* medium shadow */
+      border-radius: 6px; /* optional: slightly rounded corners */
+    }
+    /* Make Figure 8 larger than the default 800px */
+    #fig8 img {
+      width: 60%;           /* fill the wider container */
+      height: 40%;
+    }
+    .figure img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #000; /* thin black line */
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1); /* medium shadow */
+      border-radius: 6px; /* optional: slightly rounded corners */
+    }
+    .figure figcaption {
+      margin-top: .5rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .fig-ref { white-space: nowrap; }
+
+    .eq { margin-top: .4rem; padding: .5rem .7rem; border: 1px solid #e6e6e6; border-radius: 10px; background: #fafafa; display: inline-block; }
+    .eq-terms { margin: .5rem 0 0 1.2rem; }
+    .eq-terms code { font-weight: 600; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #222; padding: 10px; vertical-align: top; }
+    thead th { background: #f6f6f6; }
+
+    /* ✅ FIX: code blocks and formulas not visible */
+    pre{
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 14px;
+      border-radius: 16px;
+      overflow: auto;
+      box-shadow: var(--shadow);
+    }
+    pre code{
+      color: inherit !important;
+      background: transparent !important;
+      opacity: 1 !important;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      display: block;
+      white-space: pre;
+    }
+    pre code *{
+      color: inherit !important;
+      opacity: 1 !important;
+    }
+    :not(pre) > code{
+      background: #f3f4f6;
+      color: #111827;
+      padding: 0.12em 0.35em;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    footer{
+      padding: 18px 12px;
+      text-align: center;
+      color: #333;
+      border-top: 1px solid #ddd;
+      background: #fff;
+    }
+
+    /* ========= Left Side Quick Jump (Prev/Next) ========= */
+    .section-navigator {
+      position: fixed;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 50;
+
+      background: var(--card);
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 10px;
+      width: 260px;
+      backdrop-filter: blur(6px);
+    }
+
+    .section-navigator .title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin: 0 0 8px;
+      color: #111;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .section-navigator .current {
+      font-weight: 600;
+      color: #333;
+      font-size: 0.9rem;
+      margin: 0 0 10px;
+      line-height: 1.25;
+    }
+
+    .section-navigator .btn {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 6px 0;
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      transition: transform .06s ease, background-color .2s ease, border-color .2s ease;
+    }
+    .section-navigator .btn:hover {
+      background: #f6f8fb;
+      border-color: rgba(0,0,0,.2);
+    }
+    .section-navigator .btn:active { transform: translateY(1px); }
+
+    .section-navigator .arrow {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--nav);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    .section-navigator .meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .section-navigator .meta small {
+      color: #666;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .section-navigator .meta span {
+      font-weight: 800;
+      color: #111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .section-navigator .mini {
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 900;
+      padding: 6px 8px;
+      border-radius: 10px;
+    }
+    .section-navigator .mini:hover { background: rgba(0,0,0,.06); }
+
+    .section-navigator.collapsed {
+      width: auto;
+      padding: 10px;
+    }
+    .section-navigator.collapsed .current,
+    .section-navigator.collapsed .btn,
+    .section-navigator.collapsed .title strong {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .section-navigator {
+        left: 50%;
+        top: auto;
+        bottom: 14px;
+        transform: translateX(-50%);
+        width: min(520px, calc(100vw - 24px));
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .section-navigator .title,
+      .section-navigator .current {
+        grid-column: 1 / -1;
+      }
+      .section-navigator.collapsed { display: none; }
+    }
+    .figure {
+      margin: 1.5rem auto;
+      text-align: center;
+      max-width: 800px;
+      scroll-margin-top: 155px; 
+    }
+  </style>
+</head>
+
+<body>
+  <header id="top">
+    <h1>IoT Temperature Monitoring System</h1>
+    <nav>
+      <a href="#intro">Introduction</a>
+      <a href="#methods">Methods</a>
+      <a href="#implementation">Implementation</a>
+      <a href="#results">Results</a>
+      <a href="#discussion">Discussion</a>
+      <a href="#references">References</a>
+      <a href="#Attachments">Attachments</a>
+    </nav>
+  </header>
+
+  <!-- ✅ Quick Jump (Prev/Next) -->
+  <aside class="section-navigator" id="sectionNav" aria-label="Quick section navigation">
+    <div class="title">
+      <strong>Quick jump</strong>
+      <button class="mini" id="toggleNav" type="button" aria-label="Collapse quick jump">⟨⟩</button>
+    </div>
+
+    <p class="current" id="currentSectionText">You are at: …</p>
+
+    <button class="btn" id="prevBtn" type="button">
+      <div class="arrow">↑</div>
+      <div class="meta">
+        <small>Previous</small>
+        <span id="prevLabel">…</span>
+      </div>
+    </button>
+
+    <button class="btn" id="nextBtn" type="button">
+      <div class="arrow">↓</div>
+      <div class="meta">
+        <small>Next</small>
+        <span id="nextLabel">…</span>
+      </div>
+    </button>
+  </aside>
+
+  <main>
+
+    <!-- ===================== 1) INTRO ===================== -->
+    <section id="intro">
+      <h2>1. Introduction</h2>
+      <strong> Background & Motivation</strong>
+      <p>In modern industrial and home automation systems, precise temperature control is essential for both performance and energy efficiency.</p>
+      <p>Air heater systems, in particular, require stable regulation to maintain target temperatures under varying load and environmental conditions.</p>
+      <p>
+        With the rise of Internet of Things (IoT) technologies, it is now possible to combine local control with remote monitoring and data analytics,
+        enabling better performance tracking, optimization, and scalability.
+        <a class="fig-ref" href="#fig1">(Figure&nbsp;1)</a>.
+      </p>
+
+      <!-- figure 1 -->
+      <figure id="fig1" class="figure">
+        <img src="IoT conceptual figure.png"
+             alt="Conceptual IoT cloud showing multiple devices connected for monitoring and control."
+             loading="lazy">
+        <figcaption><strong>Figure 1.</strong> Conceptual illustration of the Internet of Things (IoT):
+          devices connect via cloud services for monitoring and control.
+          Source: <a href="https://es.123rf.com/photo_92572902_iot-internet-de-las-cosas-imagen-ilustraci%C3%B3n-c%C3%ADrculo.html" target="_blank" rel="noopener">Original Image</a>.
+        </figcaption>
+      </figure>
+
+      <strong> Porblem Statement</strong>
+      <p>
+        This project focuses on building a compact and cost-effective temperature control system for an air heater using <strong> Arduino Uno </strong> platform.
+        However, the Arduino Uno lacks a true analog output, which is often needed for controlling analog actuators.
+      </p>
+      <p>Additionally, temperature sensors such as the TMP36 are prone to electrical noise, making stable measurements challenging.</p>
+      <p>Finally, traditional standalone controllers lack modern features such as cloud-based data logging, remote human-machine interfaces (HMI), and real-time parameter adjustment.</p>
+
+      <strong> Objectives </strong>
+      <p>The main objectives of the system are:</p>
+      <ul>
+        <li>Implement a <strong> custom PID controller </strong> from scratch, without relying on external PID libraries.</li>
+        <li>Integrate a <strong> low-pass filtering algorithm </strong> to stabilize noisy sensor readings.</li>
+        <li>Provide an <strong>analog-like output</strong> using <strong>PWM with RC filtering</strong> (Note: this part can be done with an MCP4725 DAC as well).</li>
+        <li><strong>Simulate </strong> the heater’s thermal behavior alongside real TMP36 sensor measurements to test the low-pass filter.</li>
+        <li><strong> Log key variables </strong> (setpoint, measured temperature, control output) to ThingSpeak for cloud monitoring.</li>
+        <li>Develop two <strong>local web interfaces</strong> — one for <strong>charts</strong> and one for a <strong>dashboard</strong> — for live data visualization and on-the-fly parameter tuning, respectively.</li>
+      </ul>
+
+      <strong> Scope </strong>
+      <p>This project includes:</p>
+      <ul>
+        <li>Hardware setup with Arduino Uno, TMP36 sensor, RC filter, LEDs, and control buttons.</li>
+        <li>Custom software libraries for PID control and signal filtering.</li>
+        <li>Thermal process simulation for development and testing.</li>
+        <li>Dual data visualization: cloud-based (ThingSpeak) and local (web dashboard + charts).</li>
+        <li>Basic cybersecurity considerations for IoT data transmission.</li>
+      </ul>
+
+      <strong> Project Overview</strong>
+      <p>
+        This documentation outlines the complete development process of the system, including hardware design, software implementation,
+        communication architecture, web interface development, and performance evaluation. The aim is to deliver a compact, cost-effective,
+        and remotely manageable temperature control system for IoT applications.
+      </p>
+    </section>
+
+    <!-- ===================== 2) METHODS ===================== -->
+    <section id="methods">
+      <h2>2. Materials and Methods</h2>
+
+      <h3>2.1 System Overview &amp; Architecture</h3>
+      <p>
+        The project is an Arduino-based <strong>PI temperature control system</strong> that works with both real and simulated temperature data.
+        The Arduino receives temperature input from a <strong>TMP36 sensor</strong> and from a <strong>simulated thermal process model</strong>,
+        processes the values through a <strong>PI control algorithm</strong>, and adjusts the output using PWM.
+        The PWM signal is smoothed via an <strong>RC filter</strong>, producing an analog-like control signal to drive the actuator (heater).
+      </p>
+      <p>
+        Data is sent to <strong>ThingSpeak</strong> for cloud logging and visualization. In parallel, the Arduino runs a
+        <strong>local web server</strong> that allows real-time monitoring and tuning of control parameters (setpoint, Kp, Ki, Kd)
+        via a browser-based dashboard; the setpoint is also adjustable using push buttons (Increase, Decrease the temperature) on the breadboard.
+        <a class="fig-ref" href="#fig2">(Figure&nbsp;2)</a>.
+      </p>
+
+      <!-- figure 2 -->
+      <figure id="fig2" class="figure">
+        <img src="system block diagram.png"
+             alt="System sketch for IoT temperature monitoring and control."
+             loading="lazy">
+        <figcaption><strong>Figure 2.</strong> System Sketch of IoT Temperature Monitoring &amp; Control.</figcaption>
+      </figure>
+
+      <h3>2.2 Hardware Components</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Purpose</th>
+            <th>Key Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Arduino Uno R4</strong></td>
+            <td>Central controller</td>
+            <td>Runs the PI algorithm, low-pass filter, manages sensor readings, and handles WiFi communication.</td>
+          </tr>
+          <tr>
+            <td><strong>TMP36 Temperature Sensor</strong></td>
+            <td>Measures actual temperature</td>
+            <td>Outputs voltage proportional to temperature; requires calibration for accuracy.</td>
+          </tr>
+          <tr>
+            <td><strong>RC Filter</strong> (10 kΩ resistor + 0.1–10 µF capacitor)</td>
+            <td>Smooths PWM output into analog-like voltage</td>
+            <td>Enables analog control despite Arduino’s lack of a true DAC (<strong>MCP4725 I2C</strong> DAC could done the job as well).</td>
+          </tr>
+          <tr>
+            <td><strong>LEDs</strong></td>
+            <td>Visual indicators</td>
+            <td>One displays the heater output level (PWM intensity), while the other shows the system status (ON/OFF) relative to the target.</td>
+          </tr>
+          <tr>
+            <td><strong>Push Buttons</strong></td>
+            <td>Local setpoint control</td>
+            <td>One increases and one decreases the temperature setpoint.</td>
+          </tr>
+          <tr>
+            <td><strong>WiFi Module</strong> (built into Arduino Uno WiFi)</td>
+            <td>Cloud and dashboard communication</td>
+            <td>Updates ThingSpeak and serves the local web interfaces.</td>
+          </tr>
+          <tr>
+            <td><strong>Breadboard &amp; Jumper Wires</strong></td>
+            <td>Circuit assembly</td>
+            <td>Used for prototyping and testing before permanent setup.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>While the table summarizes the purpose of each component, <a class="fig-ref" href="#fig3">Figure&nbsp;3</a> gives a visual overview of the actual hardware parts used in the system.</p>
+
+      <!-- figure 3 -->
+      <figure id="fig3" class="figure">
+        <img src="Hardware components.png"
+             alt="Hardware components used in the system."
+             loading="lazy">
+        <figcaption><strong>Figure 3.</strong> Hardware Components Used in the System.</figcaption>
+      </figure>
+
+      <h3>2.3 Software &amp; Control Strategy</h3>
+      <p>The software is implemented in <strong>Arduino C++</strong> and uses two custom libraries:</p>
+      <ul>
+        <li><strong>MyPID</strong> – Implements a discrete PI controller with anti-windup.</li>
+        <li><strong>MyLowPassFilter</strong> – Filters noise from both the simulated and TMP36 readings.</li>
+      </ul>
+
+      <p><strong>Main tasks handled by the firmware:</strong></p>
+
+      <ol>
+        <li><strong>Temperature Acquisition</strong> – Reads real temperature from TMP36 and simulated process temperature.</li>
+
+        <li>
+          <strong>Filtering</strong> – Uses a low-pass (exponential) filter to smooth noisy readings:
+          <div style="text-align:center; margin:6px 0;">
+            <code>y(t) = α · x(t) + (1 − α) · y(t − 1)</code>
+          </div>
+          <ul class="eq-terms">
+            <li><code>x(t)</code>: current raw measurement (TMP36 or simulated)</li>
+            <li><code>y(t)</code>: filtered output value (smoothed temperature)</li>
+            <li><code>y(t − 1)</code>: previous filtered output (last sample)</li>
+            <li><code>α</code>: smoothing factor (0–1). Higher = faster response, lower = smoother</li>
+            <li><code>t</code>: current sample/time step</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Air-Heater Simulator Model</strong> – Updates simulated temperature using a first-order thermal model:
+          <div style="text-align:center; margin:6px 0;">
+            <code>dT(t)/dt = −(1/τ) · (T(t) − T<sub>amb</sub>) + K · u(t)</code>
+          </div>
+          <ul class="eq-terms">
+            <li><code>T(t)</code>: simulated air temperature (°C) → <code>simulatedTemp</code></li>
+            <li><code>T<sub>amb</sub></code>: ambient temperature (°C) → <code>T_ambient</code></li>
+            <li><code>τ</code>: time constant (s) → <code>tau</code> (bigger = slower response)</li>
+            <li><code>K</code>: heater gain → <code>K</code> (bigger = stronger heating)</li>
+            <li><code>u(t)</code>: normalized heater input in <code>[0, 1]</code> → <code>u = PWM/255</code></li>
+          </ul>
+
+          <div style="text-align:center; margin:6px 0;">
+            <code>T<sub>k+1</sub> = T<sub>k</sub> + dt · [ −(1/τ)(T<sub>k</sub> − T<sub>amb</sub>) + K · u<sub>k</sub> ]</code>
+          </div>
+          <ul class="eq-terms">
+            <li><code>dt</code>: sample time (seconds) computed from <code>millis()</code></li>
+            <li><code>k</code>: current discrete sample index (each loop iteration)</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Control Computation</strong> – Calculates the PID control output based on:
+          <ul>
+            <li>Error = Setpoint − Measured Temperature</li>
+            <li>Integral term to remove steady-state error</li>
+            <li>Output constraint to keep PWM in range (0–255)</li>
+          </ul>
+
+          <div style="text-align:center; margin:6px 0;">
+            <code>e(t) = r(t) − y(t)</code>
+          </div>
+          <div style="text-align:center; margin:6px 0;">
+            <code>u(t) = Kp · e(t) + Ki · ∫ e(t)dt + Kd · d(e(t))/dt</code>
+          </div>
+
+          <ul class="eq-terms">
+            <li><code>r(t)</code>: setpoint / reference (°C) → <code>setpoint</code></li>
+            <li><code>y(t)</code>: measured temperature (°C), using filtered value → <code>filteredTemp</code></li>
+            <li><code>e(t)</code>: control error (°C)</li>
+            <li><code>Kp</code>: proportional gain → <code>kp</code></li>
+            <li><code>Ki</code>: integral gain → <code>ki</code></li>
+            <li><code>Kd</code>: derivative gain (often 0 in this project) → <code>kd</code></li>
+            <li><code>u(t)</code>: controller output (limited to PWM range 0–255)</li>
+          </ul>
+
+          <div style="text-align:center; margin:6px 0;">
+            <code>PWM = constrain(u, 0, 255) &nbsp;&nbsp;and&nbsp;&nbsp; u<sub>norm</sub> = PWM / 255</code>
+          </div>
+        </li>
+
+        <li><strong>Actuation</strong> – Sends PWM signal to heater output and LED indicator.</li>
+
+        <li>
+          <strong>Data Logging</strong> – Sends data to
+          <a href="https://thingspeak.com/" target="_blank" rel="noopener"
+             title="Opens ThingSpeak official website for more details">ThingSpeak</a>
+          every 15 seconds.
+        </li>
+
+        <li><strong>Web Interface Hosting</strong> – Serves JSON data via <code>/data</code> endpoint and accepts parameter changes via URL queries.</li>
+      </ol>
+
+      <h3>2.4 Web Interface</h3>
+      <p>Two HTML-based dashboards are used:</p>
+      <ul>
+        <li><strong>Charts Dashboard</strong> – Displays real-time temperature trends using Chart.js.</li>
+        <li><strong>PID Parameter Dashboard</strong> – Allows adjusting setpoint and PI parameters (Kp, Ki, Kd) directly from a browser (locally).</li>
+      </ul>
+
+      <p><strong>Key features:</strong></p>
+      <ul>
+        <li>Local Hosting – Arduino serves HTML and JSON endpoints.</li>
+        <li>CORS Enabled – Allows cross-origin access for flexibility in UI development.</li>
+        <li>Mobile Friendly – Buttons and charts designed for use on phones or tablets.</li>
+      </ul>
+
+      <h3>2.5 Wiring Diagram &amp; Hardware Setup</h3>
+      <p>The wiring connects <a class="fig-ref" href="#fig4">Figure&nbsp;4</a>:</p>
+      <ul>
+        <li><strong>TMP36</strong> → Analog input (A0)</li>
+        <li><strong>Push Buttons</strong> → Digital pins (2, 3)</li>
+        <li><strong>PWM Output</strong> → Pin 5 → RC filter → Heater/LED (LED used here while simulating)</li>
+        <li><strong>LED Status</strong> → Pin 6, 7</li>
+        <li><strong>WiFi &amp; USB</strong> → Arduino communication and programming</li>
+      </ul>
+
+      <!-- figure 4 -->
+      <figure id="fig4" class="figure">
+        <img src="Wiring Diagram.png"
+             alt="Wiring diagram for TMP36, buttons, LEDs, RC filter, and Arduino Uno R4."
+             loading="lazy">
+        <figcaption><strong>Figure 4.</strong> Wiring Diagram for TMP36, Buttons, LEDs, RC Filter, and Arduino Uno R4.</figcaption>
+      </figure>
+
+      <p>The hardware setup <a class="fig-ref" href="#fig5">Figure&nbsp;5</a>:</p>
+      <p>
+        This is the hardware setup for our Arduino-based temperature control system (as designed in Figure 4, Wiring Diagram).
+        The blue LED shows system status, and the green LED shows intensity. An RC filter smooths the PWM signal.
+        The TMP36 sensor reads temperature, and the two buttons adjust the setpoint up or down.
+      </p>
+
+      <!-- figure 5 -->
+      <figure id="fig5" class="figure">
+        <img src="Hardware Setup.png"
+             alt="Hardware setup."
+             loading="lazy">
+        <figcaption><strong>Figure 5.</strong> Hardware setup.</figcaption>
+      </figure>
+
+      <h3>2.6 Data Logging &amp; Visualization</h3>
+      <ul>
+        <li><strong>ThingSpeak</strong> – Stores <a class="fig-ref" href="#fig6">(Figure&nbsp;6)</a>:
+          <ul>
+            <li>Field 1: Simulated temperature</li>
+            <li>Field 2: Filtered simulated temperature</li>
+            <li>Field 3: Setpoint</li>
+            <li>Field 4: PWM output</li>
+            <li>MATLAB Visualizations (Simulated Temperature, Filtered Temperature and Setpoint)</li>
+          </ul>
+
+          <!-- figure 6 -->
+          <figure id="fig6" class="figure">
+            <img src="ThingSpeak Charts.png"
+                 alt="ThingSpeak fields used."
+                 loading="lazy">
+            <figcaption><strong>Figure 6.</strong> ThingSpeak used Fileds.</figcaption>
+          </figure>
+        </li>
+
+        <li><strong>Local Dashboard</strong> – Fetches JSON data from Arduino for live updates.</li>
+
+        <li><strong>Serial Monitor</strong> <a class="fig-ref" href="#fig7">(Figure&nbsp;7)</a> – Used for debugging with detailed printouts of:
+          <ul>
+            <li>Setpoint</li>
+            <li>Simulated Temp</li>
+            <li>Filtered Temp</li>
+            <li>TMP36 Raw</li>
+            <li>TMP36 Filtered</li>
+            <li>PWM Output</li>
+            <li>Current PI parameters</li>
+          </ul>
+        </li>
+      </ul>
+                <!-- figure 7 -->
+          <figure id="fig7" class="figure">
+            <img src="Serial Monitor .png"
+                 alt="Serial Monitor."
+                 loading="lazy">
+            <figcaption><strong>Figure 7.</strong> Serial Monitor.</figcaption>
+          </figure>
+        </li>
+
+      <h3>2.7 Cybersecurity Measures</h3>
+      <p>To reduce the attack surface and prevent casual unauthorized access while keeping the system local-only, the project includes the following measures:</p>
+      
+      <ul>
+        <li><strong>Login Gate for Local Pages <a class="fig-ref" href="#fig8">(Figure&nbsp;8)</a>:</strong> Both <code>charts.html</code> and <code>dashboard.html</code> enforce an authentication check using <code>sessionStorage</code>. Unauthenticated users are redirected to <code>login.html</code>.</li>
+        <li><strong>Logout Functionality:</strong> A visible “Logout” button on both pages clears the auth flag and returns the user to <code>login.html</code>, preventing reuse of the session in that tab.</li>
+        <li><strong>Per-Tab Session Isolation:</strong> Authentication is stored in <code>sessionStorage</code> (not <code>localStorage</code>), so a new tab/window requires a new login, limiting unintended sharing.</li>
+        <li><strong>Local-Only Access:</strong> The dashboard and charts are used on the local machine/LAN only. No public hosting or external port exposure is used.</li>
+        <li><strong>Router Hygiene (No Accidental Exposure):</strong> Port forwarding is not configured for the Arduino/dashboard, and UPnP is kept off to avoid auto-opened ports.</li>
+        <li><strong>Minimal Data Exposure:</strong> Only non-sensitive runtime values (setpoint, temperatures, PWM, PI terms) are exchanged as JSON; credentials are not transmitted in these calls.</li>
+      </ul>
+                      <!-- figure 8 -->
+          <figure id="fig8" class="figure">
+            <img src="Login.png"
+                 alt="Login Page."
+                 loading="lazy">
+            <figcaption><strong>Figure 8.</strong> Login Page.</figcaption>
+          </figure>
+    </section>
+
+    <!-- ===================== 3) IMPLEMENTATION ===================== -->
+    <section id="implementation">
+      <h2>3. Implementation &amp; Code Overview</h2>
+
+      <h3 id="firmware-structure">3.1 Arduino Firmware Structure</h3>
+      <p>The Arduino sketch is organized into six functional areas :</p>
+      <ol>
+        <li><strong>Network &amp; ThingSpeak Setup</strong> – Connects to WiFi, starts the local web server, and initializes ThingSpeak.</li>
+        <li><strong>Input Handling</strong> – Reads the TMP36 sensor and simulated temperature model.</li>
+        <li><strong>Signal Filtering</strong> – Smooths both simulated and real temperature signals using <code>MyLowPassFilter</code> library.</li>
+        <li><strong>PI Control Computation</strong> – Uses the <code>MyPID</code> library to calculate the heater output.</li>
+        <li><strong>Output Actuation</strong> – Sends a PWM signal to the heater/LED and updates status indicators.</li>
+        <li><strong>Data Logging &amp; Web Serving</strong> – Uploads data to ThingSpeak and serves JSON responses for the local dashboard.</li>
+      </ol>
+
+      <p>Here's the flowchart of the Arduino Firmware Structure based on above six functional areas <a class="fig-ref" href="#fig9">(Figure&nbsp;9)</a>:</p>
+
+      <!-- figure 9 -->
+      <figure id="fig9" class="figure">
+        <img src="Arduino_Firmware_Flowchart.png"
+             alt="Arduino firmware flowchart."
+             loading="lazy">
+        <figcaption><strong>Figure 9.</strong> Flowchart of Arduino Firmware Structure.</figcaption>
+      </figure>
+
+      <h3 id="key-code">3.2 Key Code Sections</h3>
+
+      <h4>WiFi and ThingSpeak Initialization</h4>
+      <pre><code class="language-cpp">WiFi.begin(ssid, password);
+while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+}
+server.begin();
+ThingSpeak.begin(client);</code></pre>
+      <ul>
+        <li>Connects to the specified WiFi network.</li>
+        <li>Starts the local web server.</li>
+        <li>Prepares ThingSpeak for cloud updates.</li>
+      </ul>
+
+      <h4>Simulated Temperature Model</h4>
+      <pre><code class="language-cpp">float dTdt = (-1.0f / tau) * (simulatedTemp - T_ambient) + K * u;
+simulatedTemp += dTdt * dt;</code></pre>
+      <ul>
+        <li>Models how the temperature changes over time.</li>
+        <li><code>tau</code> (time constant) and <code>K</code> (gain) mimic a real thermal system.</li>
+        <li><code>u</code> is the normalized PWM control output.</li>
+      </ul>
+
+      <h4>Real Temperature Measurement (TMP36)</h4>
+      <pre><code class="language-cpp">int analogReading = analogRead(A0);
+float voltage = analogReading * (5.0f / 1023.0f);
+tmp36Raw = (voltage - 0.5f) * 100.0f - 9.7f;
+tmp36Filtered = tmp36Filter.update(tmp36Raw);</code></pre>
+      <ul>
+        <li>Converts the TMP36 voltage to °C.</li>
+        <li>Applies calibration offset (<code>-9.7</code>).</li>
+        <li>Filters to remove high-frequency noise.</li>
+      </ul>
+
+      <h4>PI Control Logic</h4>
+      <pre><code class="language-cpp">float outputFloat = myController.compute(setpoint, filteredTemp);
+int output = constrain((int)outputFloat, 0, 255);
+analogWrite(pwmPin, output);</code></pre>
+      <ul>
+        <li>The PI controller calculates output from the difference between setpoint and filtered temperature.</li>
+        <li>Output is clamped between <code>0</code> and <code>255</code> for PWM.</li>
+      </ul>
+
+      <h3 id="custom-libs">3.3 Custom Libraries</h3>
+
+      <h4>MyPID</h4>
+      <p>Implements a discrete-time PI controller with anti-windup.</p>
+      <p><strong>Core formula (conceptual):</strong> <code>Output = Kp * error + Ki * ∫error + Kd * d(error)/dt</code></p>
+      <p>Includes <code>setTunings()</code> to update parameters from the dashboard.</p>
+      <pre><code class="language-cpp">float output = _Kp * error + _Ki * _integral + _Kd * derivative;</code></pre>
+
+      <h4>MyLowPassFilter</h4>
+      <p>Implements exponential smoothing:</p>
+      <p><code>y(t) = α · x(t) + (1 − α) · y(t−1)</code></p>
+      <p>Used twice: (1) for simulated temperature stability, (2) for TMP36 sensor noise reduction.</p>
+      <pre><code class="language-cpp">_filteredValue = _alpha * newInput + (1.0f - _alpha) * _filteredValue;</code></pre>
+
+      <h3 id="logging-web">3.4 Data Logging and Web Interface</h3>
+
+      <h4>ThingSpeak Upload</h4>
+      <pre><code class="language-cpp">ThingSpeak.setField(1, simulatedTemp);
+ThingSpeak.setField(2, filteredTemp);
+ThingSpeak.setField(3, setpoint);
+ThingSpeak.setField(4, output);
+ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);</code></pre>
+      <p>Sends selected parameters every ~15 seconds (free-tier API limit).</p>
+
+      <h4>Local JSON Endpoint</h4>
+      <pre><code class="language-cpp">if (req.indexOf("/data") &gt;= 0) {
+    webClient.println("{\"setpoint\":25,\"simulatedTemp\":23.5,\"filteredTemp\":23.6,"
+                      "\"tmp36Raw\":21.2,\"tmp36Filtered\":21.1,"
+                      "\"pwm\":120,\"kp\":5.0,\"ki\":0.1,\"kd\":0.0}");
+}</code></pre>
+      <p>Returns live parameters in JSON format for the HTML dashboard.</p>
+
+      <h3 id="serial-monitor">3.5 Serial Monitor Debugging</h3>
+      <p>At each loop iteration, the system prints:</p>
+      <ul>
+        <li>Setpoint</li>
+        <li>Simulated Temperature</li>
+        <li>Filtered Temperature</li>
+        <li>TMP36 Raw</li>
+        <li>TMP36 Filtered</li>
+        <li>PWM Output</li>
+        <li>Current PI parameters</li>
+      </ul>
+      <p><strong>Example output:</strong></p>
+      <pre><code class="language-yaml">Setpoint       : 25 °C
+Simulated Temp : 23.48 °C
+Filtered Temp  : 23.55 °C
+TMP36 Raw      : 21.23 °C
+TMP36 Filtered : 21.18 °C
+PWM Output     : 120
+PID (Kp,Ki,Kd) : 5.0, 0.1, 0.0</code></pre>
+    </section>
+
+    <!-- ===================== 4) RESULTS ===================== -->
+    <section id="results">
+      <h2>4. Results &amp; Data Visualization</h2>
+
+      <h3 id="system-performance">4.1 System Performance</h3>
+      <ul>
+        <li><strong>Setpoint Tracking:</strong> Maintained desired setpoint with minimal steady-state error.</li>
+        <li><strong>Overshoot:</strong> Small overshoot on rapid setpoint changes; settled within <em>10–15 s</em>.</li>
+        <li><strong>Settling Time:</strong> Fast stabilization after tuning <code>Kp</code> and <code>Ki</code>.</li>
+        <li><strong>Noise Reduction:</strong> Low-pass filters significantly reduced high-frequency noise, yielding smoother control action.</li>
+        <li><strong>Control Stability:</strong> Controller output stayed within safe PWM range <code>(0–255)</code> under disturbances and noise.</li>
+      </ul>
+
+      <h3 id="filtered-vs-raw">4.2 Filtered vs. Raw Sensor Data</h3>
+      <p>Two temperature inputs were monitored:</p>
+      <ul>
+        <li><strong>Simulated Temperature:</strong> From the thermal model.</li>
+        <li><strong>Real TMP36 Sensor:</strong> Raw and filtered readings.</li>
+      </ul>
+
+      <p><strong>Observations:</strong></p>
+      <ul>
+        <li>The <em>filtered</em> signal showed reduced short-term fluctuations and improved PI stability.</li>
+        <li>The <em>raw</em> signal reacted faster but introduced slight instability when used directly in the loop.</li>
+      </ul>
+
+
+      <div id="chart-raw-vs-filtered" aria-label="Raw vs Filtered Temperature Line Chart" role="img"></div>
+
+      <h3 id="thingspeak-logging">4.3 ThingSpeak Data Logging</h3>
+      <p>Data uploaded every ~15 seconds included:</p>
+      <ul>
+        <li><strong>Field 1:</strong> Simulated Temperature</li>
+        <li><strong>Field 2:</strong> Filtered Temperature</li>
+        <li><strong>Field 3:</strong> Setpoint</li>
+        <li><strong>Field 4:</strong> PWM Output</li>
+        <li>Air Heater Process &amp; Temperatures and Setpoint</li>
+      </ul>
+
+      <p><strong><a class="fig-ref" href="#fig10">Figure&nbsp;10:</a></strong> ThingSpeak charts showing how the temperature tracks the setpoint with minimal delay, enabling historical review and tuning insights.</p>
+      <div id="chart-thingspeak" aria-label="ThingSpeak Historical Temperature Chart" role="img"></div>
+
+      <!-- figure 10 -->
+      <figure id="fig10" class="figure">
+        <img src="ThingSpeak Charts Result.png"
+             alt="ThingSpeak charts result."
+             loading="lazy">
+        <figcaption><strong>Figure 10.</strong> ThingSpeak Charts (Temperature tracks the setpoints).</figcaption>
+      </figure>
+
+      <h3 id="local-dashboard">4.4 Local Web Dashboard Output</h3>
+      <p>
+        The system has a local web interface with login protection. After login, the dashboard shows live values
+        and allows tuning of PID Parameters. The charts page shows setpoint, simulated, and sensor temperatures,
+        both raw and filtered. This gives real-time control and visualization in a secure way.
+        As shown in <strong><a class="fig-ref" href="#fig11">Figures&nbsp;11–12–13</a></strong>.
+      </p>
+
+      <ul>
+        <li><strong>Parameter Control:</strong> Adjust <code>Setpoint</code>, <code>Kp</code>, <code>Ki</code>, and <code>Kd</code> in real time.</li>
+        <li><strong>Real-time JSON Data:</strong> Fetched from the Arduino <code>/data</code> endpoint.</li>
+        <li><strong>Charts View:</strong> Live trends (e.g., with Chart.js) for temperatures and control output.</li>
+      </ul>
+
+      <!-- Figure 11 -->
+      <figure id="fig11" class="figure">
+        <img src="PID Parameter & Simulated Chart.png"
+             alt="Dashboard showing parameter sliders and simulated temperature chart."
+             loading="lazy">
+        <figcaption><strong>Figure 11.</strong> Left—parameter sliders &amp; current values. Right—live temperature graph (Simulated).</figcaption>
+      </figure>
+
+      <!-- Figure 12 -->
+      <figure id="fig12" class="figure">
+        <img src="PID Parameter Dashboard.png"
+             alt="Dashboard view of parameter sliders and live data display."
+             loading="lazy">
+        <figcaption><strong>Figure 12.</strong> Better view of parameter sliders and current values.</figcaption>
+      </figure>
+
+      <!-- Figure 13 -->
+      <figure id="fig13" class="figure">
+        <img src="PID Parameter & TMP36 Chart.png"
+             alt="Local web dashboard with sliders and live TMP36 temperature graph."
+             loading="lazy">
+        <figcaption><strong>Figure 13.</strong> Left—parameter sliders &amp; current values. Right—Live TMP36 filtered &amp; raw temperature graph.</figcaption>
+      </figure>
+
+      <h3 id="summary-observations">4.5 Summary of Observations</h3>
+      <ul>
+        <li>The PI controller achieved stable temperature regulation with minimal steady-state error.</li>
+        <li>Low-pass filters were essential for smoothing noisy inputs and enhancing control stability.</li>
+        <li>ThingSpeak and the local dashboard provided reliable real-time monitoring and control.</li>
+        <li><strong>Future improvement:</strong> Increase local dashboard update frequency via direct JSON streaming to avoid ThingSpeak API rate limits.</li>
+      </ul>
+    </section>
+
+    <!-- ===================== 5) DISCUSSION ===================== -->
+    <section id="discussion">
+      <h2>5. Discussion &amp; Conclusions</h2>
+
+      <h3 id="challenges-faced">5.1 Challenges Faced</h3>
+      <p>During the development of the IoT-based temperature control system, several challenges were encountered:</p>
+      <ul>
+        <li><strong>WiFi Timeouts:</strong> Occasional network disconnections interrupted data logging and dashboard updates.</li>
+        <li><strong>Sensor Noise:</strong> The TMP36 sensor output showed noticeable fluctuations, initially causing instability in the control loop.</li>
+        <li><strong>ThingSpeak Update Delay:</strong> The free-tier API limit (15 seconds) slowed cloud-based visualization.</li>
+        <li><strong>Parameter Tuning Issues:</strong> Balancing quick response and minimal overshoot required repeated PID tuning trials.</li>
+      </ul>
+
+      <h3 id="solutions-applied">5.2 Solutions Applied</h3>
+      <p>To overcome these issues, the following measures were implemented:</p>
+      <ul>
+        <li><strong>WiFi Reconnection Logic:</strong> Added code to detect disconnection and automatically reconnect without manual intervention.</li>
+        <li><strong>Filtering Enhancements:</strong> Applied low-pass filters to both simulated and real sensor readings to smooth control inputs.</li>
+        <li><strong>Interface Optimization:</strong> Split the parameter dashboard and chart display into separate HTML pages to improve responsiveness.</li>
+        <li><strong>Incremental Tuning:</strong> Adjusted <code>Kp</code>, <code>Ki</code>, and <code>Kd</code> iteratively while observing live chart responses.</li>
+        <li><strong>Basic Cybersecurity Controls:</strong> Added a local login/logout flow, enforced auth checks on charts and dashboard pages, and kept the system LAN-only with no router port forwarding or UPnP enabled.</li>
+      </ul>
+
+      <h3 id="future-improvements">5.3 Future Improvements</h3>
+      <p>Potential upgrades to enhance performance and usability include:</p>
+      <ul>
+        <li><strong>Faster Local Data Handling:</strong> Implement WebSocket or MQTT for real-time updates without relying solely on ThingSpeak refresh rates.</li>
+        <li><strong>Advanced Filtering:</strong> Use adaptive or Kalman filters for more precise noise reduction.</li>
+        <li><strong>Mobile App Integration:</strong> Enable parameter control and monitoring from a smartphone interface.</li>
+        <li><strong>Multi-Sensor Support:</strong> Incorporate additional sensors for redundancy and better environmental awareness.</li>
+        <li><strong>Standalone Deployment:</strong> Transition from breadboard to a PCB-based hardware module for increased durability.</li>
+        <li><strong>HTTPS & Certificate Handling:</strong> Use TLS for local access (self-signed on LAN) to protect credentials and data in transit.</li>
+        <li><strong>Stronger Auth:</strong> Replace client-only checks with a lightweight server-side auth (e.g., basic auth via Nginx/Apache or a tiny Node proxy) so secrets are never visible in page source.</li>
+        <li><strong>Role-Based Access:</strong> Separate viewer vs. tuner roles for safer parameter changes.</li>
+        <li><strong>Audit & Rate Limits:</strong> Log parameter changes and add simple request throttling to reduce misuse.</li>
+      </ul>
+
+      <h3 id="final-conclusion">5.4 Final Conclusion</h3>
+      <p>
+        The developed system successfully achieved stable temperature regulation using a PI controller on Arduino,
+        with both simulated and real sensor inputs. Data logging via ThingSpeak and a custom local dashboard enabled
+        real-time monitoring and parameter control. Despite minor delays in cloud updates, the system proved reliable
+        for small-scale IoT applications and is easily adaptable for industrial or home automation scenarios.
+      </p>
+      <p>
+        With targeted enhancements—particularly in data handling speed, noise filtering, and mobile accessibility—
+        the solution could be production-ready for real-world deployment.
+      </p>
+    </section>
+
+    <!-- ===================== 6) REFERENCES ===================== -->
+    <section id="references">
+      <h2>References</h2>
+      <ul>
+        <li><a href="https://www.arduino.cc/" target="_blank" rel="noopener">Arduino Official Website</a></li>
+        <li><a href="https://thingspeak.com/" target="_blank" rel="noopener">ThingSpeak Platform</a></li>
+        <li><a href="https://www.halvorsen.blog" target="_blank" rel="noopener">Hans-Petter Halvorsen's Blog</a></li>
+      </ul>
+    </section>
+    <!-- ===================== 7) Attachments ===================== -->
+    <section id="Attachments">
+      <h2>Attachments</h2>
+      <p>
+      The full Arduino sketch and custom libraries are provided in a separate appendix:
+      <a href="code.html" target="_blank"> (Appendix A: Arduino & Libraries Code). </a>.
+      </p>
+    </section>
+
+  </main>
+
+  <footer id="page-footer">
+    <p>&copy; 2025 IoT Lab Project by Manis Mosa</p>
+  </footer>
+
+  <script>
+    // ======= Elements =======
+    const sections = Array.from(document.querySelectorAll("main > section[id]"));
+    const headerNavLinks = Array.from(document.querySelectorAll("header nav a[href^='#']"));
+    const headerEl = document.querySelector("header");
+
+    const sectionNav = document.getElementById("sectionNav");
+    const currentSectionText = document.getElementById("currentSectionText");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const prevLabel = document.getElementById("prevLabel");
+    const nextLabel = document.getElementById("nextLabel");
+    const toggleNav = document.getElementById("toggleNav");
+
+    // ✅ Update browser tab title per section
+    const BASE_TITLE = document.title;
+
+    // ======= Build section list (id + title from h2) =======
+    const sectionInfo = sections.map(sec => {
+      const h2 = sec.querySelector("h2");
+      return { id: sec.id, title: (h2 ? h2.textContent.trim() : sec.id) };
+    });
+
+    let activeIndex = 0;
+
+    function headerOffset() {
+      return (headerEl ? headerEl.getBoundingClientRect().height : 0) + 12;
+    }
+
+    function setActiveNavLink(activeId) {
+      headerNavLinks.forEach(a => {
+        const hrefId = a.getAttribute("href").slice(1);
+        a.classList.toggle("active", hrefId === activeId);
+      });
+    }
+
+    function updateSideNav(idx) {
+      const current = sectionInfo[idx];
+      if (!current) return;
+
+      currentSectionText.textContent = "You are at: " + current.title;
+      setActiveNavLink(current.id);
+
+      // ✅ Update tab title
+      document.title = `${BASE_TITLE} — ${current.title}`;
+
+      // Previous label/target
+      if (idx <= 0) {
+        prevLabel.textContent = "Top";
+        prevBtn.dataset.target = "__top__";
+      } else {
+        prevLabel.textContent = sectionInfo[idx - 1].title;
+        prevBtn.dataset.target = sectionInfo[idx - 1].id;
+      }
+
+      // Next label/target
+      if (idx >= sectionInfo.length - 1) {
+        nextLabel.textContent = "Bottom";
+        nextBtn.dataset.target = "__bottom__";
+      } else {
+        nextLabel.textContent = sectionInfo[idx + 1].title;
+        nextBtn.dataset.target = sectionInfo[idx + 1].id;
+      }
+    }
+
+    function activateById(id) {
+      const idx = sectionInfo.findIndex(s => s.id === id);
+      if (idx >= 0) {
+        activeIndex = idx;
+        updateSideNav(activeIndex);
+      }
+    }
+
+    function scrollToId(id) {
+      if (!id) return;
+
+      if (id === "__top__") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        activeIndex = 0;
+        updateSideNav(activeIndex);
+        history.replaceState(null, "", "#intro");
+        return;
+      }
+
+      if (id === "__bottom__") {
+        const footer = document.getElementById("page-footer");
+        if (footer) footer.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.replaceState(null, "", "#" + sectionInfo[sectionInfo.length - 1].id);
+        return;
+      }
+
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        // ✅ Update UI immediately (don’t wait for observer)
+        activateById(id);
+
+        // ✅ Keep URL hash in sync without causing a second jump
+        history.replaceState(null, "", "#" + id);
+      }
+    }
+
+    // Buttons
+    prevBtn.addEventListener("click", () => scrollToId(prevBtn.dataset.target));
+    nextBtn.addEventListener("click", () => scrollToId(nextBtn.dataset.target));
+
+    // Collapse
+    toggleNav.addEventListener("click", () => {
+      sectionNav.classList.toggle("collapsed");
+    });
+
+    // ✅ Make header nav update instantly (also updates quick jump)
+    headerNavLinks.forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = a.getAttribute("href").slice(1);
+        scrollToId(id);
+      });
+    });
+
+    // ======= Robust scroll-based active section detection =======
+    function getActiveIndexFromScroll() {
+      const off = headerOffset();
+      let idx = 0;
+
+      // Pick the last section whose top is above the header offset
+      for (let i = 0; i < sections.length; i++) {
+        const top = sections[i].getBoundingClientRect().top;
+        if (top - off <= 0) idx = i;
+        else break;
+      }
+      return idx;
+    }
+
+    let ticking = false;
+    window.addEventListener("scroll", () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const idx = getActiveIndexFromScroll();
+        if (idx !== activeIndex) {
+          activeIndex = idx;
+          updateSideNav(activeIndex);
+          history.replaceState(null, "", "#" + sectionInfo[activeIndex].id);
+        }
+      });
+    }, { passive: true });
+
+    window.addEventListener("resize", () => {
+      const idx = getActiveIndexFromScroll();
+      activeIndex = idx;
+      updateSideNav(activeIndex);
+    });
+
+    // Initial: respect URL hash if present
+    (function init() {
+      const hash = (location.hash || "").replace("#", "");
+      const idx = sectionInfo.findIndex(s => s.id === hash);
+      if (idx >= 0) {
+        activeIndex = idx;
+        updateSideNav(activeIndex);
+      } else {
+        activeIndex = 0;
+        updateSideNav(activeIndex);
+        if (!location.hash) history.replaceState(null, "", "#intro");
+      }
+    })();
+  </script>
+</body>
+</html>
